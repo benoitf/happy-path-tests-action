@@ -1,0 +1,82 @@
+{
+  "name": "happy-path-tests-action",
+  "version": "0.0.1",
+  "author": "Florent Benoit",
+  "description": "Launch Eclipse Che Happy Path Tests",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@actions/core": "^1.2.4",
+    "@actions/github": "^4.0.0",
+    "@actions/tool-cache": "^1.6.0",
+    "@kubernetes/client-node": "^0.13.2",
+    "@octokit/webhooks": "^7.9.3",
+    "axios": "^0.19.2",
+    "execa": "^4.0.3",
+    "fs-extra": "^9.0.1",
+    "handlebars": "^4.7.6",
+    "inversify": "^5.0.1",
+    "ncc": "^0.3.6",
+    "reflect-metadata": "^0.1.13"
+  },
+  "devDependencies": {
+    "@prettier/plugin-xml": "^0.10.0",
+    "@types/fs-extra": "^9.0.1",
+    "@types/jest": "^26.0.9",
+    "@types/reflect-metadata": "^0.1.0",
+    "@typescript-eslint/eslint-plugin": "^3.9.0",
+    "@typescript-eslint/parser": "^3.9.0",
+    "@zeit/ncc": "^0.22.3",
+    "cpx": "^1.5.0",
+    "eslint": "^7.6.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-jest": "^23.20.0",
+    "import-sort-style-eslint": "^6.0.0",
+    "jest": "^26.3.0",
+    "nexe": "3.3.7",
+    "prettier": "^2.0.5",
+    "prettier-plugin-import-sort": "^0.0.4",
+    "ts-jest": "^26.2.0",
+    "typescript": "^3.9.7"
+  },
+  "scripts": {
+    "compile": "tsc --project .",
+    "format": "prettier --write **/*.ts **/**/*.ts package.json tests/_data/**/*.* tests/_data/**/**/*.*",
+    "format-check": "prettier --check **/*.ts **/**/*.ts",
+    "lint": "eslint . --ext .ts",
+    "pack": "ncc build dist/entrypoint.js -o lib",
+    "test": "jest"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ],
+    "coverageDirectory": "./coverage",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "modulePathIgnorePatterns": [
+      "<rootDir>/dist"
+    ],
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ]
+  },
+  "prettier": {
+    "printWidth": 120,
+    "singleQuote": true
+  },
+  "importSort": {
+    ".ts": {
+      "style": "eslint",
+      "parser": "typescript"
+    }
+  }
+}

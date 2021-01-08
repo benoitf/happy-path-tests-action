@@ -1,0 +1,5 @@
+name: 'Launch Happy Path tests of Eclipse Che'
+description: 'Start Happy Path tests of Eclipse Che'
+runs:
+  using: 'node12'
+  main: 'lib/index.js'

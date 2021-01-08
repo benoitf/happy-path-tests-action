@@ -1,0 +1,9 @@
+coverage
+.intellij
+.eclipse
+.vscode
+node_modules
+dist
+
+yarn-error.log
+publish.sh
