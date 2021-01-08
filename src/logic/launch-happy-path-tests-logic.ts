@@ -25,11 +25,11 @@ export class LaunchHappyPathTestsLogic implements Logic, AnyListener {
   private happyPathHelper: HappyPathHelper;
 
   public async execute(): Promise<void> {
-    core.info('Images [pull]...');
-    await this.imagesHelper.pull();
-
     core.info('Eclipse Che [clone]...');
     await this.cheHelper.clone();
+
+    core.info('Images [pull]...');
+    await this.imagesHelper.pull();
 
     core.info('Workspace [start]...');
     await this.workspaceHelper.start();

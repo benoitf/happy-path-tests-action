@@ -10,7 +10,7 @@ export class CheHelper {
     
     // Clone Eclipse che
     core.info('Cloning eclipse che for happy path tests')
-    const gitCloneProcess = execa('git', ['clone', 'https://github.com/eclipse/che']);
+    const gitCloneProcess = execa('git', ['clone', '--depth', '1', 'https://github.com/eclipse/che']);
     if (gitCloneProcess.stdout) {
       gitCloneProcess.stdout.pipe(process.stdout);
     }

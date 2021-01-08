@@ -6,6 +6,7 @@ import { InversifyBinding } from './inversify-binding';
 
 export class Main {
   public static readonly GITHUB_TOKEN: string = 'github-token';
+  public static readonly CHE_URL: string = 'che-url';
   public static readonly MINIKUBE_VERSION: string = 'minikube';
   public static readonly MINIKUBE_VERSION_DEFAULT: string = 'default';
   public static readonly ADD_STATUS: string = 'add-status';
@@ -18,7 +19,11 @@ export class Main {
       throw new Error(`No Github Token provided (${Main.GITHUB_TOKEN})`);
     }
 
-    const inversifyBinbding = new InversifyBinding(githubToken);
+    const cheUrl = core.getInput(Main.CHE_URL, { required: true });
+    if (!cheUrl) {
+      throw new Error(`No che-url provided (${Main.CHE_URL})`);
+    }
+    const inversifyBinbding = new InversifyBinding(githubToken, cheUrl);
     const container = inversifyBinbding.initBindings();
     const analysis = container.get(Analysis);
     await analysis.analyze(github.context);

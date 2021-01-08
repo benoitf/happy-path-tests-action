@@ -3,3 +3,7 @@ description: 'Start Happy Path tests of Eclipse Che'
 runs:
   using: 'node12'
   main: 'lib/index.js'
+inputs:
+  cheUrl:
+    description: 'Url of the Eclipse Che Server'
+    required: true
