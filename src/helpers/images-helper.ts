@@ -1,14 +1,18 @@
 import * as core from '@actions/core';
 import * as execa from 'execa';
-import * as path from 'path';
 import * as fs from 'fs-extra';
 import AxiosInstance from 'axios';
 
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
+import { Configuration } from '../api/configuration';
 
 @injectable()
 export class ImagesHelper {
 
+
+  @inject(Configuration)
+  private configuration: Configuration;
+  
   async pullImage(image: string): Promise<void> {
     core.info(`Pulling image ${image}...`);
     const imagePullProcess = execa('docker', ['pull', image]);
@@ -19,7 +23,67 @@ export class ImagesHelper {
     core.info(`Pulling image ${image} done`);
   }
 
-  async pull(): Promise<void> {
+  async findImages(path: string): Promise<string[]> {
+    const images = new Set<string>();
+
+    // starts by http, use axios else use file
+    let devfileContent;
+    if (path.startsWith('http')) {
+      const response = await AxiosInstance.get(path);
+      devfileContent = response.data;
+    } else {
+      devfileContent = await fs.readFile(path, 'utf-8');
+    }
+
+    // search the images referenced by the devfile
+    const regexpImage = /image: (?<imagename>.*)/gm;
+    let mImage;
+    while ((mImage = regexpImage.exec(devfileContent)) !== null) {
+      if (mImage.groups) {
+        const imageName = mImage.groups.imagename;
+        core.info(`Found ${imageName} in happy path ${path}`);
+        images.add(imageName);
+      }
+    }
+
+    const regexpId = /id: (?<componentid>.*)/gm;
+    let mId;
+    while ((mId = regexpId.exec(devfileContent)) !== null) {
+      if (mId.groups) {
+        // need to grab plugin's id
+        const componentId = mId.groups.componentid;
+        core.info(`Searching in id ${componentId}`);
+        const response = await AxiosInstance.get(`https://che-plugin-registry-main.surge.sh/v3/plugins/${componentId}/meta.yaml`);
+        const pluginIdContent = response.data;
+        const pluginRegexpImage = /image: (?<imagename>.*)/gm;
+        let mPluginImage;
+        while ((mPluginImage = pluginRegexpImage.exec(pluginIdContent)) !== null) {
+          if (mPluginImage.groups) {
+            const imageName = mPluginImage.groups.imagename;
+            core.info(`Found ${imageName} in component id ${componentId}`);
+            images.add(imageName);
+          }
+        }
+      }
+    }
+
+    const regexpReference = /reference: (?<referencedEntry>.*)/gm;
+    let mReference;
+    while ((mReference = regexpReference.exec(devfileContent)) !== null) {
+      if (mReference.groups) {
+        // need to grab reference
+        const reference = mReference.groups.referencedEntry;
+        core.info(`Searching in reference ${reference}`);
+        const referencedImages = await this.findImages(reference);
+        core.info(`Found images ${referencedImages} in reference ${reference}`);
+        referencedImages.forEach(image => images.add(image));
+      }
+    }
+
+    return Array.from(images).map(imageParam => imageParam.replace(/'/g, '').replace(/"/g, ''));
+  }
+
+  async pull(): Promise<void[]> {
 
     // setup docker-env of minikube
     core.info('Setup docker-env of minikube')
@@ -40,54 +104,15 @@ export class ImagesHelper {
     }
 
 
-    // grab the images to pull from happy path files
-    const cheHappyPathFolder = path.resolve('che', 'tests', 'e2e', 'files', 'happy-path');
-    const files = await fs.readdir(cheHappyPathFolder);
-    const images = new Set<string>();
-    await Promise.all(files.map(async file => {
-      // search inside yaml files the images
-      if (file.endsWith('.yaml')) {
-        // look for image:
-        const fileContent = await fs.readFile(path.join(cheHappyPathFolder, file), 'utf-8');
+    // get happy path and analyze reference from the devfile
+    const devfilePath = this.configuration.devfilePath();
 
+    // find images from devfilePath
+    const foundImages = await this.findImages(devfilePath);
 
-        const regexpImage = /image: (?<imagename>.*)/gm;
-        let mImage;
-        while ((mImage = regexpImage.exec(fileContent)) !== null) {
-          if (mImage.groups) {
-            const imageName = mImage.groups.imagename;
-            core.info(`Finding ${imageName} in happy path file ${file}`);
-            images.add(imageName);
-          }
-        }
+    // skip images that are prefixed with 'local-'
+    const images = foundImages.filter(image => !image.startsWith("local-"));
 
-        const regexpId = /id: (?<componentid>.*)/gm;
-        let mId;
-        while ((mId = regexpId.exec(fileContent)) !== null) {
-          if (mId.groups) {
-            // need to grab plugin's id
-            const componentId = mId.groups.componentid;
-
-            const response = await AxiosInstance.get(`https://che-plugin-registry-main.surge.sh/v3/plugins/${componentId}/meta.yaml`);
-            const pluginIdContent = response.data;
-
-            const pluginRegexpImage = /image: (?<imagename>.*)/gm;
-            let mPluginImage;
-            while ((mPluginImage = pluginRegexpImage.exec(pluginIdContent)) !== null) {
-              if (mPluginImage.groups) {
-                const imageName = mPluginImage.groups.imagename;
-                core.info(`Finding ${imageName} in component id ${componentId}`);
-                images.add(imageName);
-              }
-            }
-          }
-        }
-      }
-    }));
-
-    await Promise.all(Array.from(images).map(async imageParam => {
-      const image = imageParam.replace(/'/g, '').replace(/"/g, '');
-      return this.pullImage(image);
-    }));
+    return Promise.all(images.map(async image => this.pullImage(image)));
   }
 }

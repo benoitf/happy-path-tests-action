@@ -18,6 +18,7 @@ export class InversifyBinding {
   constructor(
     private githubToken: string,
     private cheUrl: string,
+    private devfilePath: string,
   ) {}
 
   public initBindings(): Container {
@@ -32,6 +33,7 @@ export class InversifyBinding {
     // configuration
     const configuration: Configuration = {
       cheUrl: () => this.cheUrl,
+      devfilePath: () => this.devfilePath,
     };
     this.container.bind(OctokitBuilder).toSelf().inSingletonScope();
     const writeOctokit = this.container.get(OctokitBuilder).build(this.githubToken);

@@ -4,6 +4,9 @@ runs:
   using: 'node12'
   main: 'lib/index.js'
 inputs:
-  cheUrl:
+  che-url:
     description: 'Url of the Eclipse Che Server'
     required: true
+  devfile-path:
+    description: 'Path to the devfile to use for the workspace'
+    required: false

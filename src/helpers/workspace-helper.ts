@@ -3,11 +3,15 @@ import * as execa from 'execa';
 import * as path from 'path';
 import * as k8s from '@kubernetes/client-node';
 
-import { injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
+import { Configuration } from '../api/configuration';
 
 @injectable()
 export class WorkspaceHelper {
 
+  @inject(Configuration)
+  private configuration: Configuration;
+  
   private k8sApi: k8s.CoreV1Api;
 
   @postConstruct()
@@ -39,10 +43,10 @@ export class WorkspaceHelper {
 
     // First create the workspace
     core.info('Create and start workspace...')
-    const cheHappyPathFolder = path.resolve('che', 'tests', 'e2e', 'files', 'happy-path');
-    const devfilePath = path.join(cheHappyPathFolder, 'happy-path-workspace.yaml');
+    const devfileUrl = this.configuration.devfilePath();
+    core.info(`DevFile Path selected to ${devfileUrl}`);
 
-    const createAndStartWorkspaceProcess = execa('chectl', ['workspace:create', '--start', `--devfile=${devfilePath}`]);
+    const createAndStartWorkspaceProcess = execa('chectl', ['workspace:create', '--start', `--devfile=${devfileUrl}`]);
     if (createAndStartWorkspaceProcess.stdout) {
       createAndStartWorkspaceProcess.stdout.pipe(process.stdout);
     }
